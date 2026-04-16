@@ -1,6 +1,7 @@
 #pragma once
 
-#include <drogon/Task.h>
+#include <drogon/drogon.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <optional>
@@ -84,6 +85,8 @@ struct CreateOrderResult
     
     // 订单号
     std::string order_number;
+
+    std::string code{"UNKNOWN"}
     
     // 结果消息
     std::string message;
@@ -92,22 +95,23 @@ struct CreateOrderResult
     CreateOrderResult() = default;
 
     // 便捷构造函数
-    CreateOrderResult(bool success, std::string order_num, std::string msg)
+    CreateOrderResult(bool success, std::string order_num, std::string code, std::string msg)
         : is_success(success)
         , order_number(std::move(order_num))
+        , code(std::move(code))
         , message(std::move(msg))
     {}
 
     // 静态工厂方法：创建成功结果
     static CreateOrderResult success(std::string order_num, std::string msg = "下单成功")
     {
-        return CreateOrderResult(true, std::move(order_num), std::move(msg));
+        return CreateOrderResult(true, std::move(order_num), "OK", std::move(msg));
     }
 
     // 静态工厂方法：创建失败结果
-    static CreateOrderResult failure(std::string msg = "下单失败，请重试")
+    static CreateOrderResult failure(std::string msg = "下单失败,请重试", std::string code= "UNKNOWN")
     {
-        return CreateOrderResult(false, "", std::move(msg));
+        return CreateOrderResult(false, "", std::move(code), std::move(msg));
     }
 };
 

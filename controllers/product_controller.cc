@@ -1,6 +1,7 @@
 #include "product_controller.h"
 #include "models/Product.h"
 
+using namespace drogon;
 using namespace drogon_model::testdb;
 
 // 获取所有商品列表接口实现
@@ -102,7 +103,7 @@ void product_controller::get_product_by_id(const HttpRequestPtr& req, std::funct
             HttpResponsePtr resp;
 
             if (const auto* notFound = 
-                dynamic_cast<const drogon::orm::UnexpectedRows*>(&e)) 
+                dynamic_cast<const drogon::orm::UnexpectedRows*>(&e.base())) 
             {
                 ret["status"] = 404;
                 ret["error"] = "Product not found.";
@@ -112,6 +113,7 @@ void product_controller::get_product_by_id(const HttpRequestPtr& req, std::funct
             } 
             else
             {
+                LOG_ERROR << "get_product_by_id db error: " << e.base().what();
                 ret["status"] = 500;
                 ret["error"] = e.base().what();
                 ret["data"] = Json::nullValue;
@@ -414,7 +416,7 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
             HttpResponsePtr resp;
 
             if (const auto* notFound = 
-                dynamic_cast<const drogon::orm::UnexpectedRows*>(&e)) 
+                dynamic_cast<const drogon::orm::UnexpectedRows*>(&e.base())) 
             {
                 ret["status"] = 404;
                 ret["error"] = "Product not found.";
@@ -424,6 +426,7 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
             } 
             else
             {
+                LOG_ERROR << "update_product db error: " << e.base().what();
                 ret["status"] = 500;
                 ret["error"] = e.base().what();
                 ret["data"] = Json::nullValue;
