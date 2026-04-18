@@ -18,6 +18,7 @@ public:
 class ValidationError : public std::runtime_error
 {
 public:
+    int code;
     using std::runtime_error::runtime_error;
 };
 } // namespace
@@ -28,7 +29,7 @@ drogon::Task<CreateOrderResult> OrderService::createOrder(const CreateOrderReque
 
     if (!db_client)
     {
-        co_return CreateOrderResult::failure("Database client not found", "DB_CLIENT_MISSING");
+        co_return CreateOrderResult::failure("Database client not found.",40001);
     }
 
     std::shared_ptr<drogon::orm::Transaction> trans_ptr;
@@ -45,7 +46,7 @@ drogon::Task<CreateOrderResult> OrderService::createOrder(const CreateOrderReque
             const auto& item = req.items[i];
             if (item.product_id <= 0 || item.quantity_purchased <= 0)
             {
-                throw ValidationError("非法商品ID或数量");
+                throw ValidationError("Invalid product ID or quantity.", 10201);
             }
 
             auto price_res = co_await trans_ptr->execSqlCoro(
@@ -53,13 +54,13 @@ drogon::Task<CreateOrderResult> OrderService::createOrder(const CreateOrderReque
                 item.product_id);
             if (price_res.size() == 0)
             {
-                throw ValidationError("商品不存在");
+                throw ValidationError("Product does not exist.", 20101);
             }
 
             const auto db_price = price_res[0]["price"].as<int64_t>();
             if (item.price_at_purchase != 0 && item.price_at_purchase != db_price)
             {
-                throw ValidationError("商品价格校验失败");
+                throw ValidationError("Product price verification failed.", 10202);
             }
             item_prices.push_back(db_price);
 
@@ -70,26 +71,26 @@ drogon::Task<CreateOrderResult> OrderService::createOrder(const CreateOrderReque
             
             if (result.affectedRows() == 0)
             {
-                throw InventoryConflictError("库存冲突/超卖");
+                throw InventoryConflictError("Inventory conflict / Oversold.");
             }
             
             const __int128 line_amount = static_cast<__int128>(db_price) *
                                          static_cast<__int128>(item.quantity_purchased);
             if (line_amount > static_cast<__int128>(std::numeric_limits<int64_t>::max()))
             {
-                throw ValidationError("订单金额溢出");
+                throw ValidationError("Order amount overflow.", 30201);
             }
             const int64_t line_amount_i64 = static_cast<int64_t>(line_amount);
             if (total_amount > std::numeric_limits<int64_t>::max() - line_amount_i64)
             {
-                throw ValidationError("订单金额溢出");
+                throw ValidationError("Order amount overflow.", 30201);
             }
             total_amount += line_amount_i64;
         }
 
         if (req.total_order_amount != 0 && req.total_order_amount != total_amount)
         {
-            throw ValidationError("订单总金额不一致");
+            throw ValidationError("The total order amount is inconsistent.", 30202);
         }
 
         std::string order_number = drogon::utils::getUuid();
@@ -128,7 +129,7 @@ drogon::Task<CreateOrderResult> OrderService::createOrder(const CreateOrderReque
             trans_ptr.reset();
         }
         LOG_ERROR << "createOrder validation error: " << e.what();
-        co_return CreateOrderResult::failure(e.what(), "VALIDATION_ERROR");
+        co_return CreateOrderResult::failure(e.what(), 400);
     }
     catch (const InventoryConflictError& e)
     {
@@ -145,7 +146,7 @@ drogon::Task<CreateOrderResult> OrderService::createOrder(const CreateOrderReque
             trans_ptr.reset();
         }
         LOG_ERROR << "createOrder inventory conflict: " << e.what();
-        co_return CreateOrderResult::failure(e.what(), "INVENTORY_CONFLICT");
+        co_return CreateOrderResult::failure(e.what(), 30301);
     }
     catch (const drogon::orm::DrogonDbException& e)
     {
@@ -162,7 +163,7 @@ drogon::Task<CreateOrderResult> OrderService::createOrder(const CreateOrderReque
             trans_ptr.reset();
         }
         LOG_ERROR << "createOrder db error: " << e.base().what();
-        co_return CreateOrderResult::failure("数据库错误", "DB_ERROR");
+        co_return CreateOrderResult::failure("Database error.", 40002);
     }
     catch (const std::exception& e)
     {
@@ -179,6 +180,6 @@ drogon::Task<CreateOrderResult> OrderService::createOrder(const CreateOrderReque
             trans_ptr.reset();
         }
         LOG_ERROR << "createOrder unknown error: " << e.what();
-        co_return CreateOrderResult::failure("下单失败，请重试", "UNKNOWN");
+        co_return CreateOrderResult::failure("Order failed. Please try again.", 40099);
     }
 }

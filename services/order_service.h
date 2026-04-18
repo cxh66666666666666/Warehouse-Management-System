@@ -80,38 +80,35 @@ struct CreateOrderRequest
  */
 struct CreateOrderResult
 {
-    // 是否创建成功
-    bool is_success{false};
-    
-    // 订单号
-    std::string order_number;
-
-    std::string code{"UNKNOWN"}
+    // HTTP/业务状态码
+    int code{500};
     
     // 结果消息
     std::string message;
+
+    // 负载数据
+    std::string data;
 
     // 默认构造函数
     CreateOrderResult() = default;
 
     // 便捷构造函数
-    CreateOrderResult(bool success, std::string order_num, std::string code, std::string msg)
-        : is_success(success)
-        , order_number(std::move(order_num))
-        , code(std::move(code))
+    CreateOrderResult(int c, std::string msg, std::string d = "")
+        : code(c)
         , message(std::move(msg))
+        , data(std::move(d))
     {}
 
     // 静态工厂方法：创建成功结果
-    static CreateOrderResult success(std::string order_num, std::string msg = "下单成功")
+    static CreateOrderResult success(std::string order_num, std::string msg = "Order placed successfully.")
     {
-        return CreateOrderResult(true, std::move(order_num), "OK", std::move(msg));
+        return CreateOrderResult(200, std::move(msg), std::move(order_num));
     }
 
     // 静态工厂方法：创建失败结果
-    static CreateOrderResult failure(std::string msg = "下单失败,请重试", std::string code= "UNKNOWN")
+    static CreateOrderResult failure(std::string msg = "Order failed. Please try again.", int c = 500)
     {
-        return CreateOrderResult(false, "", std::move(code), std::move(msg));
+        return CreateOrderResult(c,  std::move(msg), "");
     }
 };
 

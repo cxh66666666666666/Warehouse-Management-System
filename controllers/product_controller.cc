@@ -13,8 +13,8 @@ void product_controller::get_all_products(const HttpRequestPtr& req, std::functi
     if(!db_client)
     {
         Json::Value ret;
-        ret["status"]=500;
-        ret["error"]="Database client not found. Please check database configuration.";
+        ret["code"]=40001;
+        ret["message"]="Database client not found. Please check database configuration.";
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -31,7 +31,8 @@ void product_controller::get_all_products(const HttpRequestPtr& req, std::functi
         [callback](const std::vector<Product> &products)
         {
             Json::Value ret;
-            ret["status"]=200;
+            ret["code"]=200;
+            ret["message"]="Success";
             Json::Value product_array(Json::arrayValue);
 
             // 取出查询到的数据
@@ -49,8 +50,8 @@ void product_controller::get_all_products(const HttpRequestPtr& req, std::functi
         [callback](const drogon::orm::DrogonDbException& e)
         {
             Json::Value ret;
-            ret["status"]=500;
-            ret["error"]=e.base().what();
+            ret["code"]=40002;
+            ret["message"]=e.base().what();
             ret["data"] = Json::nullValue;
             auto resp=HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -70,8 +71,8 @@ void product_controller::get_product_by_id(const HttpRequestPtr& req, std::funct
     if(!db_client)
     {
         Json::Value ret;
-        ret["status"]=500;
-        ret["error"]="Database client not found. Please check database configuration.";
+        ret["code"]=40001;
+        ret["message"]="Database client not found. Please check database configuration.";
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -90,7 +91,8 @@ void product_controller::get_product_by_id(const HttpRequestPtr& req, std::funct
         [callback](const Product &product)
         {
             Json::Value ret;
-            ret["status"]=200;
+            ret["code"]=200;
+            ret["message"]="Success";
             ret["data"]=product.toJson();
             auto resp=HttpResponse::newHttpJsonResponse(ret);
             callback(resp);
@@ -102,11 +104,11 @@ void product_controller::get_product_by_id(const HttpRequestPtr& req, std::funct
             Json::Value ret;
             HttpResponsePtr resp;
 
-            if (const auto* notFound = 
-                dynamic_cast<const drogon::orm::UnexpectedRows*>(&e.base())) 
+            if (const auto* notFound =
+                dynamic_cast<const drogon::orm::UnexpectedRows*>(&e.base()))
             {
-                ret["status"] = 404;
-                ret["error"] = "Product not found.";
+                ret["code"] = 20101;
+                ret["message"] = "Product not found.";
                 ret["data"] = Json::nullValue;
                 resp = HttpResponse::newHttpJsonResponse(ret);
                 resp->setStatusCode(HttpStatusCode::k404NotFound);
@@ -114,8 +116,8 @@ void product_controller::get_product_by_id(const HttpRequestPtr& req, std::funct
             else
             {
                 LOG_ERROR << "get_product_by_id db error: " << e.base().what();
-                ret["status"] = 500;
-                ret["error"] = e.base().what();
+                ret["code"] = 40002;
+                ret["message"] = e.base().what();
                 ret["data"] = Json::nullValue;
                 resp = HttpResponse::newHttpJsonResponse(ret);
                 resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -134,8 +136,8 @@ void product_controller::create_product(const HttpRequestPtr& req, std::function
     if(!db_client)
     {
         Json::Value ret;
-        ret["status"]=500;
-        ret["error"]="Database client not found. Please check database configuration.";
+        ret["code"]=40001;
+        ret["message"]="Database client not found. Please check database configuration.";
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -150,8 +152,8 @@ void product_controller::create_product(const HttpRequestPtr& req, std::function
     if(!json_ptr)
     {
         Json::Value ret;
-        ret["status"]=400;
-        ret["error"]="No JSON data provided.";
+        ret["code"]=10001;
+        ret["message"]="No JSON data provided.";
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -164,8 +166,8 @@ void product_controller::create_product(const HttpRequestPtr& req, std::function
     if(!Product::validateJsonForCreation(*json_ptr, validation_error))
     {
         Json::Value ret;
-        ret["status"]=400;
-        ret["error"]=validation_error;
+        ret["code"]=10101;
+        ret["message"]=validation_error;
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -181,8 +183,8 @@ void product_controller::create_product(const HttpRequestPtr& req, std::function
     catch (const std::exception& e)
     {
         Json::Value ret;
-        ret["status"]=400;
-        ret["error"]=e.what();
+        ret["code"]=10002;
+        ret["message"]=e.what();
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -200,7 +202,8 @@ void product_controller::create_product(const HttpRequestPtr& req, std::function
         [callback](const Product &inserted_product)
         {
             Json::Value ret;
-            ret["status"]=201;
+            ret["code"]=201;
+            ret["message"]="Created";
             ret["data"]=inserted_product.toJson();
             auto resp=HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(HttpStatusCode::k201Created);
@@ -211,8 +214,8 @@ void product_controller::create_product(const HttpRequestPtr& req, std::function
         [callback](const drogon::orm::DrogonDbException& e)
         {
             Json::Value ret;
-            ret["status"]=500;
-            ret["error"]=e.base().what();
+            ret["code"]=40002;
+            ret["message"]=e.base().what();
             ret["data"] = Json::nullValue;
             auto resp=HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -230,8 +233,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
     if(!db_client)
     {
         Json::Value ret;
-        ret["status"]=500;
-        ret["error"]="Database client not found. Please check database configuration.";
+        ret["code"]=40001;
+        ret["message"]="Database client not found. Please check database configuration.";
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -246,8 +249,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
     if(!json_ptr)
     {
         Json::Value ret;
-        ret["status"]=400;
-        ret["error"]="No JSON data provided.";
+        ret["code"]=10001;
+        ret["message"]="No JSON data provided.";
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -269,8 +272,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
         if(!Product::validJsonOfField(1, "product_name", (*update_json)["product_name"], validation_error, false))
         {
             Json::Value ret;
-            ret["status"]=400;
-            ret["error"]=validation_error;
+            ret["code"]=10101;
+            ret["message"]=validation_error;
             ret["data"] = Json::nullValue;
             auto resp=HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -285,8 +288,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
         if(!Product::validJsonOfField(2, "price", (*update_json)["price"], validation_error, false))
         {
             Json::Value ret;
-            ret["status"]=400;
-            ret["error"]=validation_error;
+            ret["code"]=10101;
+            ret["message"]=validation_error;
             ret["data"] = Json::nullValue;
             auto resp=HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -301,8 +304,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
         if(!Product::validJsonOfField(3, "available_listing", (*update_json)["available_listing"], validation_error, false))
         {
             Json::Value ret;
-            ret["status"]=400;
-            ret["error"]=validation_error;
+            ret["code"]=10101;
+            ret["message"]=validation_error;
             ret["data"] = Json::nullValue;
             auto resp=HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -317,8 +320,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
         if(!Product::validJsonOfField(4, "sales_volume", (*update_json)["sales_volume"], validation_error, false))
         {
             Json::Value ret;
-            ret["status"]=400;
-            ret["error"]=validation_error;
+            ret["code"]=10101;
+            ret["message"]=validation_error;
             ret["data"] = Json::nullValue;
             auto resp=HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -330,8 +333,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
     if(update_field_count == 0)
     {
         Json::Value ret;
-        ret["status"]=400;
-        ret["error"]="No updatable fields provided.";
+        ret["code"]=10001;
+        ret["message"]="No updatable fields provided.";
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -357,8 +360,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
             catch(const std::exception& e)
             {
                 Json::Value ret;
-                ret["status"]=400;
-                ret["error"]=e.what();
+                ret["code"]=10002;
+                ret["message"]=e.what();
                 ret["data"] = Json::nullValue;
                 auto resp=HttpResponse::newHttpJsonResponse(ret);
                 resp->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -378,8 +381,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
                     if (rows == 0)
                     {
                         Json::Value ret;
-                        ret["status"] = 404;
-                        ret["error"] = "Update failed, product not found";
+                        ret["code"] = 20101;
+                        ret["message"] = "Update failed, product not found";
                         ret["data"] = Json::nullValue;
                         auto resp = HttpResponse::newHttpJsonResponse(ret);
                         resp->setStatusCode(HttpStatusCode::k404NotFound);
@@ -389,7 +392,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
 
                     // 获取更新后的数据
                     Json::Value ret;
-                    ret["status"] = 200;
+                    ret["code"] = 200;
+                    ret["message"] = "Success";
                     ret["data"] = product.toJson();
                     auto resp = HttpResponse::newHttpJsonResponse(ret);
                     callback(resp);
@@ -399,8 +403,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
                 [callback](const drogon::orm::DrogonDbException& e)
                 {
                     Json::Value ret;
-                    ret["status"]=500;
-                    ret["error"]=e.base().what();
+                    ret["code"]=40002;
+                    ret["message"]=e.base().what();
                     ret["data"] = Json::nullValue;
                     auto resp=HttpResponse::newHttpJsonResponse(ret);
                     resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -415,11 +419,11 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
             Json::Value ret;
             HttpResponsePtr resp;
 
-            if (const auto* notFound = 
-                dynamic_cast<const drogon::orm::UnexpectedRows*>(&e.base())) 
+            if (const auto* notFound =
+                dynamic_cast<const drogon::orm::UnexpectedRows*>(&e.base()))
             {
-                ret["status"] = 404;
-                ret["error"] = "Product not found.";
+                ret["code"] = 20101;
+                ret["message"] = "Product not found.";
                 ret["data"] = Json::nullValue;
                 resp = HttpResponse::newHttpJsonResponse(ret);
                 resp->setStatusCode(HttpStatusCode::k404NotFound);
@@ -427,8 +431,8 @@ void product_controller::update_product(const HttpRequestPtr& req, std::function
             else
             {
                 LOG_ERROR << "update_product db error: " << e.base().what();
-                ret["status"] = 500;
-                ret["error"] = e.base().what();
+                ret["code"] = 40002;
+                ret["message"] = e.base().what();
                 ret["data"] = Json::nullValue;
                 resp = HttpResponse::newHttpJsonResponse(ret);
                 resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -447,8 +451,8 @@ void product_controller::delete_product(const HttpRequestPtr& req, std::function
     if(!db_client)
     {
         Json::Value ret;
-        ret["status"]=500;
-        ret["error"]="Database client not found. Please check database configuration.";
+        ret["code"]=40001;
+        ret["message"]="Database client not found. Please check database configuration.";
         ret["data"] = Json::nullValue;
         auto resp=HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(HttpStatusCode::k500InternalServerError);
@@ -469,7 +473,7 @@ void product_controller::delete_product(const HttpRequestPtr& req, std::function
             Json::Value ret;
             if(rows==0)
             {
-                ret["status"]=404;
+                ret["code"]=20101;
                 ret["message"]="Product not found.";
                 ret["data"]=Json::nullValue;
                 auto resp=HttpResponse::newHttpJsonResponse(ret);
@@ -478,7 +482,7 @@ void product_controller::delete_product(const HttpRequestPtr& req, std::function
             }
             else
             {
-                ret["status"]=200;
+                ret["code"]=200;
                 ret["message"]="Delete success.";
                 ret["data"] = Json::nullValue;
                 auto resp=HttpResponse::newHttpJsonResponse(ret);
@@ -492,8 +496,8 @@ void product_controller::delete_product(const HttpRequestPtr& req, std::function
             Json::Value ret;
             HttpResponsePtr resp;
 
-            ret["status"] = 500;
-            ret["error"] = e.base().what();
+            ret["code"] = 40002;
+            ret["message"] = e.base().what();
             ret["data"] = Json::nullValue;
             resp = HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(HttpStatusCode::k500InternalServerError);
