@@ -88,6 +88,26 @@ first_drogon_app/
 └── main.cc              # 服务入口
 ```
 
+## 模块职责
+
+当前项目按比较典型的后端分层来组织，虽然还在持续重构中，但目标职责已经比较明确：
+
+- `controllers/`
+  - 负责 HTTP 请求接入、路径映射、请求参数解析和响应返回
+  - 理想状态下应尽量少直接处理数据库细节，更适合把业务编排下沉到 `services/`
+- `services/`
+  - 负责业务逻辑和流程编排
+  - 当前订单创建相关逻辑主要集中在这一层
+- `models/`
+  - 由 Drogon ORM 根据数据库表结构生成
+  - 用于把数据表映射为 C++ 类
+  - 这部分文件不应该手工修改
+- `test/`
+  - 用于放测试入口和后续测试用例
+- `qt/`
+  - 预留的 Qt6 前端目录
+  - 当前只有项目骨架，尚未接入具体实现
+
 ## 当前已有接口
 
 ### 商品接口
@@ -159,6 +179,12 @@ DELETE /products/{id}
 
 不过截至当前版本，订单功能还没有正式暴露成 HTTP 接口，所以 README 中不把它写成“已完成的对外 API”。
 
+如果想了解当前的订单流程设计思路，可以参考：
+
+- [`docs/sequence_diagram.md`](/home/chen/first_drogon_app/docs/sequence_diagram.md)
+
+这份文档更适合被理解为“订单创建目标流程设计图”，而不是当前已经完全交付的 API 行为说明。
+
 ## 数据模型
 
 从当前 ORM 模型来看，项目核心表大致包括：
@@ -168,7 +194,36 @@ DELETE /products/{id}
 - `order_main_table`
 - `order_detail_table`
 
+当前可以先按下面的关系理解：
+
+- `product` 和 `inventory` 基于 `product_id` 形成一对一关系
+- `order_main_table` 和 `order_detail_table` 是一对多关系
+- `order_detail_table` 通过 `product_id` 关联商品，保存购买时的商品快照信息
+
 目前仓库中还没有单独整理好的建表 SQL 文档，后续会补上。
+
+## 文档索引
+
+为了把项目逐步从“能跑”推进到“更像正式工程”，仓库中已经开始补充一些设计和说明文档：
+
+- [`docs/API_description.md`](/home/chen/first_drogon_app/docs/API_description.md)
+  - 当前商品接口说明
+- [`docs/mysql_description.md`](/home/chen/first_drogon_app/docs/mysql_description.md)
+  - 当前数据表关系说明
+- [`docs/configuration_item.md`](/home/chen/first_drogon_app/docs/configuration_item.md)
+  - 配置项学习与说明
+- [`docs/error_code_table.md`](/home/chen/first_drogon_app/docs/error_code_table.md)
+  - 错误码设计草案
+- [`docs/sequence_diagram.md`](/home/chen/first_drogon_app/docs/sequence_diagram.md)
+  - 订单创建流程设计图
+- [`docs/DOCS_REVIEW_REPORT.md`](/home/chen/first_drogon_app/docs/DOCS_REVIEW_REPORT.md)
+  - 本轮文档产出的批改报告
+
+说明：
+
+- 这些文档里有一部分属于“当前实现说明”
+- 也有一部分属于“下一步目标设计”
+- 后续会继续整理，让“现状”和“规划”更清晰地区分开
 
 ## 运行环境
 

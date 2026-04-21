@@ -2,7 +2,7 @@
 *   **请求方法**: `GET`
 *   **请求路径**: `/products`
 *   **请求体**: 无
-*   **成功返回体 (200 OK)**: 返回包含所有商品的 JSON 数组。
+*   **成功返回体 (200 OK)**:
     ```json
     {
         "status": 200,
@@ -14,9 +14,6 @@
     ```
 *   **错误情况**:
     *   **500 Internal Server Error**: 数据库连接失败或查询异常。
-        ```json
-        { "status": 500, "error": "Database client not found. / 具体异常信息", "data": null }
-        ```
 
 ---
 
@@ -24,7 +21,7 @@
 *   **请求方法**: `GET`
 *   **请求路径**: `/products/{id}` (例如 `/products/1`)
 *   **请求体**: 无
-*   **成功返回体 (200 OK)**: 返回对应 ID 的商品 JSON 对象。
+*   **成功返回体 (200 OK)**:
     ```json
     {
         "status": 200,
@@ -32,18 +29,15 @@
     }
     ```
 *   **错误情况**:
-    *   **404 Not Found**: 数据库中不存在该 ID 的商品。
-        ```json
-        { "status": 404, "error": "Product not found.", "data": null }
-        ```
-    *   **500 Internal Server Error**: 数据库连接失败或查询异常。
+    *   **404 Not Found**: 商品不存在。
+    *   **500 Internal Server Error**: 数据库异常。
 
 ---
 
 ### 3. 录入新商品
 *   **请求方法**: `POST`
 *   **请求路径**: `/products`
-*   **请求体 (JSON)**: 包含要创建的商品信息（主键 ID 由数据库自增，无需传）。
+*   **请求体 (JSON)**:
     ```json
     {
         "product_name": "新商品",
@@ -52,7 +46,13 @@
         "sales_volume": 0
     }
     ```
-*   **成功返回体 (201 Created)**: 返回插入成功后带有自增 ID 的完整商品对象。
+    **字段类型说明**：
+    - `product_name`: `string`，商品名称，varchar(50)
+    - `price`: `int32`，价格，**单位为"分"**（非元）
+    - `available_listing`: `int8`，上架状态，**0=下架，1=上架**
+    - `sales_volume`: `int32`，销量
+
+*   **成功返回体 (201 Created)**:
     ```json
     {
         "status": 201,
@@ -60,25 +60,24 @@
     }
     ```
 *   **错误情况**:
-    *   **400 Bad Request**: 未提供 JSON 数据，或字段校验失败（如缺少必填项、类型错误等）。
-        ```json
-        { "status": 400, "error": "No JSON data provided. / 具体校验错误信息", "data": null }
-        ```
-    *   **500 Internal Server Error**: 数据库插入失败等异常。
+    *   **400 Bad Request**: 未提供 JSON 数据，或字段校验失败。
+    *   **500 Internal Server Error**: 数据库插入失败。
 
 ---
 
 ### 4. 更新商品信息
 *   **请求方法**: `PUT`
 *   **请求路径**: `/products/{id}` (例如 `/products/1`)
-*   **请求体 (JSON)**: 仅包含需要更新的字段即可。（代码中强制忽略 JSON 里传的 `product_id`，以 URL 路径中的 ID 为准）。
+*   **请求体 (JSON)**:
     ```json
     {
         "price": 180,
         "sales_volume": 10
     }
     ```
-*   **成功返回体 (200 OK)**: 返回更新后的商品对象。
+    **说明**：URL 路径中的 `id` 优先，JSON 中的 `product_id` 会被忽略。
+
+*   **成功返回体 (200 OK)**:
     ```json
     {
         "status": 200,
@@ -86,12 +85,9 @@
     }
     ```
 *   **错误情况**:
-    *   **400 Bad Request**: 字段校验失败，或者 JSON 中没有提供任何可更新的字段（如 `product_name`, `price`, `available_listing`, `sales_volume`）。
-        ```json
-        { "status": 400, "error": "No updatable fields provided. / 校验错误信息", "data": null }
-        ```
-    *   **404 Not Found**: 要更新的商品 ID 在数据库中不存在。
-    *   **500 Internal Server Error**: 数据库更新异常。
+    *   **400 Bad Request**: 字段校验失败，或没有提供有效更新字段。
+    *   **404 Not Found**: 商品不存在。
+    *   **500 Internal Server Error**: 数据库异常。
 
 ---
 
@@ -99,7 +95,7 @@
 *   **请求方法**: `DELETE`
 *   **请求路径**: `/products/{id}` (例如 `/products/1`)
 *   **请求体**: 无
-*   **成功返回体 (200 OK)**: *(注意：此接口使用 `message` 字段而不是 `error`)*
+*   **成功返回体 (200 OK)**:
     ```json
     {
         "status": 200,
@@ -108,8 +104,17 @@
     }
     ```
 *   **错误情况**:
-    *   **404 Not Found**: 要删除的商品 ID 不存在。*(同样使用 `message` 字段返回)*
-        ```json
-        { "status": 404, "message": "Product not found.", "data": null }
-        ```
-    *   **500 Internal Server Error**: 数据库连接失败或删除异常（此处统一用 `error` 字段返回内部异常）。
+    *   **404 Not Found**: 商品不存在。
+    *   **500 Internal Server Error**: 数据库异常。
+
+---
+
+## 返回格式说明
+
+> **当前实现状态**：以下为**当前实现**使用的返回格式。
+>
+> **目标规范**：未来计划统一为 `{ "code": 0, "message": "", "data": {} }` 格式。
+
+当前返回格式存在不一致：
+- 多数接口使用 `status` + `error`/`message` + `data`
+- 删除成功使用 `message`，失败使用 `error`
